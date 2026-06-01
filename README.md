@@ -108,4 +108,9 @@ app/
 - The **tenant id** (needed for the Account section) is learned from any Space
   you own. A brand-new tenant with no wikis can paste it manually.
 - Page markdown is sanitized with DOMPurify before rendering.
-- `byo` is Glossa's only working LLM mode; `hosted` is stubbed upstream.
+- **LLM config is provider-agnostic** (Glossa runs inference through Pydantic AI).
+  When you create or edit a wiki, pick a **Provider** (OpenAI / OpenAI-compatible,
+  or Anthropic), set a **Model**, and point **API key reference** at an env var on
+  the Glossa server (e.g. `env:OPENAI_API_KEY`) — the keys themselves live
+  server-side, never in this UI. For Groq/OpenRouter/Together/Ollama/local, choose
+  OpenAI and set the **Base URL**. Legacy `byo`/`hosted` configs still work.

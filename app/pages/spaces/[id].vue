@@ -69,7 +69,7 @@ const tabs = computed(() => [
             <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
               <span class="label">{{ space.slug }}</span>
               <UiCopy :value="space.id" :label="space.id" />
-              <span class="token">{{ space.llm_config?.model || space.llm_config?.mode || 'byo' }}</span>
+              <span class="token">{{ space.llm_config?.model || space.llm_config?.provider || space.llm_config?.mode || 'openai' }}</span>
             </div>
           </div>
           <div class="flex gap-2">

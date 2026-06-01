@@ -2,10 +2,14 @@
 // No imports/exports here on purpose — that keeps these globally available.
 
 interface LLMConfig {
-  mode: 'hosted' | 'byo'
-  endpoint?: string | null
+  // Provider-agnostic (preferred): a Pydantic AI provider + optional base_url.
+  provider?: string | null
+  base_url?: string | null
   model?: string | null
   api_key_ref?: string | null
+  // Legacy (still honored): mode=byo → openai-compatible, mode=hosted → anthropic.
+  mode?: 'hosted' | 'byo'
+  endpoint?: string | null
   extra?: Record<string, unknown>
 }
 
