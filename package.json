@@ -1,0 +1,27 @@
+{
+  "name": "glossa-scriptorium",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Glossa Scriptorium — a multi-user frontend for the Glossa LLM-maintained wiki service",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "prepare": "nuxt prepare",
+    "typecheck": "nuxt typecheck"
+  },
+  "dependencies": {
+    "dompurify": "^3.2.4",
+    "marked": "^14.1.4",
+    "nuxt": "^4.0.1",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.3",
+    "tailwindcss": "^4.1.3",
+    "vue-tsc": "^2.2.0"
+  }
+}
