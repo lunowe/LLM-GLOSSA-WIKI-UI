@@ -31,6 +31,7 @@ const tabs = computed(() => [
   { label: 'Sources', to: `/spaces/${id.value}/sources`, match: (p: string) => p.startsWith(`/spaces/${id.value}/sources`) },
   { label: 'Wiki', to: `/spaces/${id.value}/pages`, match: (p: string) => p.startsWith(`/spaces/${id.value}/pages`) || p.startsWith(`/spaces/${id.value}/wiki`) },
   { label: 'Query', to: `/spaces/${id.value}/query`, match: (p: string) => p.startsWith(`/spaces/${id.value}/query`) },
+  { label: 'Chat', to: `/spaces/${id.value}/chat`, match: (p: string) => p.startsWith(`/spaces/${id.value}/chat`) },
   { label: 'Log', to: `/spaces/${id.value}/log`, match: (p: string) => p.startsWith(`/spaces/${id.value}/log`) },
   { label: 'Lint', to: `/spaces/${id.value}/lint`, match: (p: string) => p.startsWith(`/spaces/${id.value}/lint`) },
   { label: 'Schema', to: `/spaces/${id.value}/schema`, match: (p: string) => p.startsWith(`/spaces/${id.value}/schema`) },
@@ -69,7 +70,7 @@ const tabs = computed(() => [
             <div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted">
               <span class="label">{{ space.slug }}</span>
               <UiCopy :value="space.id" :label="space.id" />
-              <span class="token">{{ space.llm_config?.model || space.llm_config?.provider || space.llm_config?.mode || 'openai' }}</span>
+              <span class="token">{{ space.llm_config?.model || space.llm_config?.provider || 'openai' }}</span>
             </div>
           </div>
           <div class="flex gap-2">

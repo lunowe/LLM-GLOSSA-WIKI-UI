@@ -28,9 +28,8 @@ function openSettings() {
   const s = space.value
   if (!s) return
   form.name = s.name
-  // Prefer the provider-agnostic fields; fall back to legacy mode/endpoint.
-  form.provider = s.llm_config?.provider || (s.llm_config?.mode === 'hosted' ? 'anthropic' : 'openai')
-  form.base_url = s.llm_config?.base_url || s.llm_config?.endpoint || ''
+  form.provider = s.llm_config?.provider || 'openai'
+  form.base_url = s.llm_config?.base_url || ''
   form.model = s.llm_config?.model || ''
   form.api_key_ref = s.llm_config?.api_key_ref || ''
   showSettings.value = true

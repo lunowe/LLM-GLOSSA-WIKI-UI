@@ -6,6 +6,7 @@ import {
   getCookie,
   readRawBody,
   setResponseStatus,
+  sendWebResponse,
 } from 'h3'
 import { joinURL, withQuery } from 'ufo'
 
@@ -51,6 +52,25 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    // Server-Sent Events passthrough for chat streaming. $fetch.raw with
+    // responseType:'json' below would consume the entire event-stream and
+    // defeat token-by-token delivery, so we stream the upstream body verbatim.
+    if (path.endsWith('/chat/stream') && method === 'POST') {
+      const upstream = await fetch(target, {
+        method: 'POST',
+        headers: { ...headers, accept: 'text/event-stream' },
+        body: body as BodyInit | undefined,
+      })
+      const outHeaders = new Headers(upstream.headers)
+      outHeaders.set('content-type', upstream.headers.get('content-type') || 'text/event-stream')
+      outHeaders.set('cache-control', 'no-cache, no-transform')
+      outHeaders.set('x-accel-buffering', 'no') // disable proxy buffering (nginx/Railway)
+      return await sendWebResponse(
+        event,
+        new Response(upstream.body, { status: upstream.status, headers: outHeaders }),
+      )
+    }
+
     const res = await $fetch.raw(target, {
       method: method as never,
       headers,

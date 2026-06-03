@@ -42,7 +42,10 @@ Every request is routed through a transparent Nitro proxy
 - forwards it as `Authorization: Bearer …`,
 - passes upstream status codes and JSON bodies through verbatim, so the client
   reacts correctly to `401` (bad key → auto sign-out), `402` (quota), `403`
-  (missing scope), and `404`.
+  (missing scope), and `404`,
+- and streams Server-Sent Events through untouched for chat
+  (`POST /spaces/{id}/chat/stream`), so tokens arrive incrementally instead of
+  being buffered.
 
 Runs as an **SPA** (`ssr: false`) — data is per-user and lives behind a key, so
 there is nothing useful to server-render. The proxy still runs server-side.
@@ -56,6 +59,7 @@ there is nothing useful to server-render. The proxy still runs server-side.
 | **Sources** | Add **push** (inline content), **pull** (fetch-callback), **link** (paste a URL → fetched & converted to markdown), or **upload** (PDF/DOCX/PPTX… parsed to text) sources; ingest with **live job polling**; inspect content/metadata. |
 | **Wiki** | Browse & filter pages by kind / path; read any page with markdown + resolved `[[wikilinks]]`, source citations, and backlinks in the margin; jump to Index / Log / Lint. |
 | **Query** | Ask the wiki; rendered markdown answer with cited sources (deep-linked), cited pages, pages consulted, and reasoning. |
+| **Chat** | Converse with the wiki: a streaming agent that reads the index, searches/reads pages, and answers with cited `[[wikilinks]]`. Shows the live tool-call trace; optionally lets a useful exchange save a compact note back into the wiki under `notes/…`. |
 | **Lint** | Run a lint pass (orphans / broken links / contradictions) and read the report. |
 | **Schema** | View / edit `schema.md` with a live preview. |
 | **Webhooks** | Subscribe signed callbacks; the signing secret is revealed once. |
@@ -113,4 +117,5 @@ app/
   or Anthropic), set a **Model**, and point **API key reference** at an env var on
   the Glossa server (e.g. `env:OPENAI_API_KEY`) — the keys themselves live
   server-side, never in this UI. For Groq/OpenRouter/Together/Ollama/local, choose
-  OpenAI and set the **Base URL**. Legacy `byo`/`hosted` configs still work.
+  OpenAI and set the **Base URL**. (Glossa's config is now provider-agnostic only —
+  the legacy `mode: byo/hosted` / `endpoint` fields have been removed.)

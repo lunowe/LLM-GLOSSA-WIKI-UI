@@ -2,14 +2,14 @@
 // No imports/exports here on purpose — that keeps these globally available.
 
 interface LLMConfig {
-  // Provider-agnostic (preferred): a Pydantic AI provider + optional base_url.
+  // Provider-agnostic: a Pydantic AI provider (openai | anthropic | google | …)
+  // plus an optional base_url for OpenAI-compatible endpoints. The legacy
+  // mode/endpoint fields were removed from the Glossa model — provider, model and
+  // api_key_ref are now resolved directly.
   provider?: string | null
   base_url?: string | null
   model?: string | null
   api_key_ref?: string | null
-  // Legacy (still honored): mode=byo → openai-compatible, mode=hosted → anthropic.
-  mode?: 'hosted' | 'byo'
-  endpoint?: string | null
   extra?: Record<string, unknown>
 }
 
@@ -117,6 +117,40 @@ interface QueryResponse {
   cited_pages: string[]
   cited_sources: CitedSource[]
   reasoning?: string | null
+}
+
+// Interactive chat over a Space's wiki — POST /spaces/{id}/chat(/stream).
+type ChatRoleT = 'user' | 'assistant' | 'system'
+
+interface ChatMessage {
+  role: ChatRoleT
+  content: string
+}
+
+interface ChatRequest {
+  messages: ChatMessage[]
+  // Optional pasted material to discuss/compare against the wiki (not a durable
+  // source unless the user asks to save it).
+  context?: string | null
+  max_pages?: number
+  // When true, the agent may persist a compact note under notes/<slug>.
+  allow_writes?: boolean
+}
+
+interface ChatToolEvent {
+  name: string
+  args?: Record<string, unknown> | string | null
+  result?: string | null
+}
+
+interface ChatResponse {
+  answer: string
+  pages_consulted: string[]
+  cited_pages: string[]
+  cited_sources: CitedSource[]
+  // Logical paths of notes the agent saved this turn (only when allow_writes).
+  saved_pages: string[]
+  tool_calls: ChatToolEvent[]
 }
 
 interface Webhook {

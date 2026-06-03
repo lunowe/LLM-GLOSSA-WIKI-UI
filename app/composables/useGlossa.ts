@@ -104,8 +104,84 @@ export function useGlossa() {
     }
   }
 
+  // Bad-key-mid-session handling, shared by request() and the streaming path.
+  async function handleExpiredKey(status: number) {
+    if (status === 401 && route.path !== '/login') {
+      keyCookie.value = null
+      useTenantId().value = null
+      if (import.meta.client) await navigateTo('/login?expired=1')
+    }
+  }
+
+  interface ChatStreamHandlers {
+    onDelta?: (text: string) => void
+    onToolCall?: (e: { name: string; args?: unknown }) => void
+    onToolResult?: (e: { name: string; result?: string | null }) => void
+    onFinal?: (r: ChatResponse) => void
+    signal?: AbortSignal
+  }
+
+  /**
+   * Stream a chat turn over Server-Sent Events. The Nitro proxy passes the
+   * upstream `text/event-stream` through untouched (see server/api/glossa);
+   * here we parse `event:`/`data:` frames and dispatch delta / tool_call /
+   * tool_result / final events. Throws an ApiError on a non-2xx response.
+   */
+  async function chatStream(spaceId: string, body: ChatRequest, handlers: ChatStreamHandlers): Promise<void> {
+    const key = keyCookie.value
+    const res = await fetch(`/api/glossa/spaces/${spaceId}/chat/stream`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', ...(key ? { 'x-glossa-key': key } : {}) },
+      body: JSON.stringify(body),
+      signal: handlers.signal,
+    })
+    if (!res.ok || !res.body) {
+      let data: ApiErrorBody | undefined
+      try {
+        data = (await res.json()) as ApiErrorBody
+      } catch {
+        data = undefined
+      }
+      await handleExpiredKey(res.status)
+      throw new ApiError(res.status, data, humanMessage(res.status, data))
+    }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    for (;;) {
+      const { value, done } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      let sep: number
+      while ((sep = buffer.indexOf('\n\n')) !== -1) {
+        const frame = buffer.slice(0, sep)
+        buffer = buffer.slice(sep + 2)
+        let eventName = 'message'
+        const dataLines: string[] = []
+        for (const line of frame.split('\n')) {
+          if (line.startsWith('event:')) eventName = line.slice(6).trim()
+          else if (line.startsWith('data:')) dataLines.push(line.slice(5).replace(/^ /, ''))
+        }
+        if (!dataLines.length) continue
+        let payload: Record<string, unknown>
+        try {
+          payload = JSON.parse(dataLines.join('\n'))
+        } catch {
+          continue
+        }
+        if (eventName === 'delta') handlers.onDelta?.(String(payload.content ?? ''))
+        else if (eventName === 'tool_call') handlers.onToolCall?.(payload as { name: string; args?: unknown })
+        else if (eventName === 'tool_result') handlers.onToolResult?.(payload as { name: string; result?: string | null })
+        else if (eventName === 'final') handlers.onFinal?.(payload as unknown as ChatResponse)
+        else if (eventName === 'error') throw new ApiError(502, payload, String(payload.error || 'Chat stream failed.'))
+      }
+    }
+  }
+
   return {
     request,
+    chatStream,
 
     /** Validate a key (used by the login screen) — returns the tenant's spaces. */
     validateKey: (plaintext: string) =>
@@ -166,6 +242,9 @@ export function useGlossa() {
 
     query: (id: string, body: { question: string; max_pages?: number }) =>
       request<QueryResponse>('POST', `spaces/${id}/query`, { body }),
+
+    /** Non-streaming chat turn (used as a fallback when streaming is unavailable). */
+    chat: (id: string, body: ChatRequest) => request<ChatResponse>('POST', `spaces/${id}/chat`, { body }),
 
     lint: (id: string) => request<Job>('POST', `spaces/${id}/lint`),
 
