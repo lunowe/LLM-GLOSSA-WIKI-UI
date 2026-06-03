@@ -112,10 +112,13 @@ app/
 - The **tenant id** (needed for the Account section) is learned from any Space
   you own. A brand-new tenant with no wikis can paste it manually.
 - Page markdown is sanitized with DOMPurify before rendering.
-- **LLM config is provider-agnostic** (Glossa runs inference through Pydantic AI).
-  When you create or edit a wiki, pick a **Provider** (OpenAI / OpenAI-compatible,
-  or Anthropic), set a **Model**, and point **API key reference** at an env var on
-  the Glossa server (e.g. `env:OPENAI_API_KEY`) — the keys themselves live
-  server-side, never in this UI. For Groq/OpenRouter/Together/Ollama/local, choose
-  OpenAI and set the **Base URL**. (Glossa's config is now provider-agnostic only —
-  the legacy `mode: byo/hosted` / `endpoint` fields have been removed.)
+- **LLM config: pick a provider + model** (Glossa runs inference through Pydantic
+  AI). When you create or edit a wiki, choose one of five **Providers** — OpenAI /
+  OpenAI-compatible, Anthropic, Google Gemini, AWS Bedrock, Google Vertex AI — and
+  set a **Model**. API keys/credentials live **server-side**, one per provider
+  (`GLOSSA_*_API_KEY`, AWS, or Vertex env vars); you don't enter them here. The
+  form only shows the field a provider needs: a **Base URL** for OpenAI-compatible
+  servers (Groq/OpenRouter/Ollama/local), an **AWS region** for Bedrock, or
+  **project/location** for Vertex. The optional **API key override** is for the
+  rare case of pointing one wiki at a different server env var. The provider-aware
+  fields live in `LlmConfigFields.vue` / `useLlmConfig.ts`.

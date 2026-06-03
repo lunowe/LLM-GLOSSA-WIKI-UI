@@ -2,15 +2,28 @@
 // No imports/exports here on purpose — that keeps these globally available.
 
 interface LLMConfig {
-  // Provider-agnostic: a Pydantic AI provider (openai | anthropic | google | …)
-  // plus an optional base_url for OpenAI-compatible endpoints. The legacy
-  // mode/endpoint fields were removed from the Glossa model — provider, model and
-  // api_key_ref are now resolved directly.
+  // Per-space LLM selection. `provider` is one of the five Glossa providers
+  // (anthropic | openai | gemini | bedrock | vertex); each has its own server-side
+  // GLOSSA_* key. `api_key_ref` ("env:VAR" or literal) overrides that default key.
+  // `extra` carries provider-specific overrides: { region } (bedrock),
+  // { project, location } (vertex).
   provider?: string | null
   base_url?: string | null
   model?: string | null
   api_key_ref?: string | null
   extra?: Record<string, unknown>
+}
+
+// Flat shape backing the LLM config form (LlmConfigFields.vue + useLlmConfig.ts).
+// Mapped to/from LLMConfig — `extra` keys (region/project/location) are flattened.
+interface LlmConfigForm {
+  provider: string
+  model: string
+  base_url: string
+  api_key_ref: string
+  region: string
+  project: string
+  location: string
 }
 
 interface SpaceStats {

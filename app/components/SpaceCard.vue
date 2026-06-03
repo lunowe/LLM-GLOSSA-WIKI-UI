@@ -1,8 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{ space: Space }>()
-const model = computed(
-  () => props.space.llm_config?.model || props.space.llm_config?.provider || 'openai',
-)
+const model = computed(() => llmSummary(props.space.llm_config))
 </script>
 
 <template>

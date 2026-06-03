@@ -22,27 +22,20 @@ const recentPages = computed(() =>
 // ── Settings ───────────────────────────────────────────────────────────
 const showSettings = ref(false)
 const saving = ref(false)
-const form = reactive({ name: '', provider: 'openai', base_url: '', model: '', api_key_ref: '' })
+const form = reactive({ name: '', ...emptyLlmForm() })
 
 function openSettings() {
   const s = space.value
   if (!s) return
+  Object.assign(form, loadLlmForm(s.llm_config))
   form.name = s.name
-  form.provider = s.llm_config?.provider || 'openai'
-  form.base_url = s.llm_config?.base_url || ''
-  form.model = s.llm_config?.model || ''
-  form.api_key_ref = s.llm_config?.api_key_ref || ''
   showSettings.value = true
 }
 
 async function save() {
   saving.value = true
   try {
-    const llm: Record<string, unknown> = { provider: form.provider }
-    if (form.base_url.trim()) llm.base_url = form.base_url.trim()
-    if (form.model.trim()) llm.model = form.model.trim()
-    if (form.api_key_ref.trim()) llm.api_key_ref = form.api_key_ref.trim()
-    await api.spaces.update(id, { name: form.name.trim(), llm_config: llm })
+    await api.spaces.update(id, { name: form.name.trim(), llm_config: buildLlmConfig(form) })
     toast.success('Wiki updated')
     showSettings.value = false
     await refresh()
@@ -139,16 +132,7 @@ async function save() {
     <UiModal v-model:open="showSettings" title="Wiki settings" subtitle="Rename the wiki and tune its LLM backend.">
       <form class="space-y-4" @submit.prevent="save">
         <UiField label="Name"><UiInput v-model="form.name" /></UiField>
-        <div class="grid gap-4 sm:grid-cols-2">
-          <UiField label="Provider">
-            <UiSelect v-model="form.provider" :options="[{ value: 'openai', label: 'OpenAI / OpenAI-compatible' }, { value: 'anthropic', label: 'Anthropic (Claude)' }]" />
-          </UiField>
-          <UiField label="Model" optional><UiInput v-model="form.model" mono placeholder="gpt-4o-mini · claude-sonnet-4-6" /></UiField>
-        </div>
-        <UiField label="Base URL" optional hint="OpenAI-compatible endpoint (Groq, OpenRouter, Ollama, local…). Blank = provider default."><UiInput v-model="form.base_url" mono placeholder="https://api.openai.com/v1" /></UiField>
-        <UiField label="API key reference" optional hint='Env var on the Glossa server, e.g. "env:OPENAI_API_KEY".'>
-          <UiInput v-model="form.api_key_ref" mono placeholder="env:OPENAI_API_KEY" />
-        </UiField>
+        <LlmConfigFields :form="form" />
       </form>
       <template #footer>
         <UiButton @click="showSettings = false">Cancel</UiButton>

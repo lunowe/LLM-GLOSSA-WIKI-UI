@@ -23,15 +23,7 @@ const totals = computed(() => {
 const showCreate = ref(route.query.new === '1')
 const creating = ref(false)
 const showAdvanced = ref(false)
-const form = reactive({
-  name: '',
-  slug: '',
-  provider: 'openai',
-  base_url: '',
-  model: '',
-  api_key_ref: '',
-  schema_markdown: '',
-})
+const form = reactive({ name: '', slug: '', schema_markdown: '', ...emptyLlmForm() })
 
 async function createSpace() {
   if (!form.name.trim()) return
@@ -39,12 +31,8 @@ async function createSpace() {
   try {
     const body: Record<string, unknown> = { name: form.name.trim() }
     if (form.slug.trim()) body.slug = form.slug.trim()
-    const llm: Record<string, unknown> = { provider: form.provider }
-    if (form.base_url.trim()) llm.base_url = form.base_url.trim()
-    if (form.model.trim()) llm.model = form.model.trim()
-    if (form.api_key_ref.trim()) llm.api_key_ref = form.api_key_ref.trim()
     // Only send llm_config if the user customized it; otherwise the server's defaults apply.
-    if (form.provider !== 'openai' || Object.keys(llm).length > 1) body.llm_config = llm
+    if (llmFormIsCustomized(form)) body.llm_config = buildLlmConfig(form)
     if (form.schema_markdown.trim()) body.schema_markdown = form.schema_markdown
 
     const space = await api.spaces.create(body)
@@ -146,20 +134,7 @@ async function createSpace() {
         </button>
 
         <div v-if="showAdvanced" class="space-y-4 rounded-lg border border-hair bg-[color-mix(in_oklab,var(--c-ink)_3%,transparent)] p-4 inkdrop">
-          <div class="grid gap-4 sm:grid-cols-2">
-            <UiField label="Provider" hint="Inference runs through Pydantic AI on the Glossa server.">
-              <UiSelect v-model="form.provider" :options="[{ value: 'openai', label: 'OpenAI / OpenAI-compatible' }, { value: 'anthropic', label: 'Anthropic (Claude)' }]" />
-            </UiField>
-            <UiField label="Model" optional>
-              <UiInput v-model="form.model" mono placeholder="gpt-4o-mini · claude-sonnet-4-6" />
-            </UiField>
-          </div>
-          <UiField label="Base URL" optional hint="OpenAI-compatible endpoint — Groq, OpenRouter, Together, Ollama, or a local server. Blank = provider default.">
-            <UiInput v-model="form.base_url" mono placeholder="https://api.openai.com/v1" />
-          </UiField>
-          <UiField label="API key reference" optional hint='Name of an env var on the Glossa server, e.g. "env:OPENAI_API_KEY". Keys live server-side — never entered here.'>
-            <UiInput v-model="form.api_key_ref" mono placeholder="env:OPENAI_API_KEY" />
-          </UiField>
+          <LlmConfigFields :form="form" />
           <UiField label="Schema markdown" optional hint="Seeds schema.md — the LLM-facing wiki conventions.">
             <UiTextarea v-model="form.schema_markdown" :rows="4" mono placeholder="# Schema&#10;Entities: companies, people…" />
           </UiField>
